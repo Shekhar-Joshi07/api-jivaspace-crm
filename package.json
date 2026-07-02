@@ -1,0 +1,41 @@
+{
+  "name": "complete-crm-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-style REST API for the Complete CRM System",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "server": "npm run dev",
+    "seed:demo": "node src/scripts/seedDemo.js",
+    "migrate": "node src/scripts/migrateLegacyData.js",
+    "reminders": "node src/scripts/runReminders.js",
+    "test": "cross-env NODE_ENV=test node --test",
+    "check": "node --check src/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.21.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^9.0.1",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.1.4"
+  }
+}

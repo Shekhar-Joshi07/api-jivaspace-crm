@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "complete-crm-server": "file:.."
+  }
+}
