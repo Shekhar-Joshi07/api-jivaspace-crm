@@ -15,7 +15,9 @@
     "migrate": "node src/scripts/migrateLegacyData.js",
     "reminders": "node src/scripts/runReminders.js",
     "test": "cross-env NODE_ENV=test node --test",
-    "check": "node --check src/server.js"
+    "check": "node --check src/server.js",
+    "cloudflare:dev": "wrangler dev",
+    "cloudflare:deploy": "wrangler deploy"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -36,6 +38,7 @@
   "devDependencies": {
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.11",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "wrangler": "^4.107.0"
   }
 }

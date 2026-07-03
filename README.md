@@ -215,6 +215,54 @@ The test suite checks health/error contracts, JWT protection, and spreadsheet ro
 7. Import/export an XLSX file and open the result.
 8. Run `npm run reminders` and check `/api/notifications`.
 
+## Cloudflare Workers deployment
+
+Requirements:
+
+- Cloudflare Workers with Node.js compatibility
+- MongoDB Atlas or another publicly reachable MongoDB database
+- Wrangler login from this project root: `npx wrangler login`
+
+Configure production secrets:
+
+```powershell
+npx wrangler secret put MONGO_URI
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put CLIENT_URL
+```
+
+`CLIENT_URL` must be the full Cloudflare Pages frontend origin, for example `https://your-frontend.pages.dev`. To allow multiple frontend origins, use a comma-separated value.
+
+Optional provider secrets, only if email or SMS should work in production:
+
+```powershell
+npx wrangler secret put SMTP_HOST
+npx wrangler secret put SMTP_PORT
+npx wrangler secret put SMTP_USER
+npx wrangler secret put SMTP_PASS
+npx wrangler secret put SMTP_SECURE
+npx wrangler secret put EMAIL_FROM
+npx wrangler secret put SMS_API_URL
+npx wrangler secret put SMS_API_KEY
+npx wrangler secret put SMS_SENDER_ID
+```
+
+Deploy:
+
+```powershell
+npm run cloudflare:deploy
+```
+
+After deployment, Wrangler prints a Workers URL like `https://jivaspace-crm-api.<your-subdomain>.workers.dev`. Confirm the backend URL with:
+
+```powershell
+curl https://jivaspace-crm-api.<your-subdomain>.workers.dev/api/health
+```
+
+Set the frontend API base URL to that Workers URL. If you want a custom backend subdomain such as `https://api.example.com`, add a Worker custom domain or route in Cloudflare and keep `wrangler.jsonc` as the source of truth.
+
+Current upload storage caveat: the app stores uploaded files with Multer disk storage under `uploads`. Cloudflare Workers are not a durable filesystem for uploaded customer documents. Before relying on file upload/download routes in production, replace local Multer disk storage with Cloudflare R2 or another object store while keeping MongoDB for file metadata.
+
 ## Render and MongoDB Atlas deployment
 
 1. Create an Atlas cluster and database user. Add the Render outbound network range to Atlas Network Access, or temporarily allow all IPs while testing.
