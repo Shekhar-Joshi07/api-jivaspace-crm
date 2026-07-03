@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 import { connectDB } from '../config/db.js';
 import { generateReminders } from '../services/reminderService.js';
 

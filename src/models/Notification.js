@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 
 export const NOTIFICATION_TYPES = [
   'task_assigned',

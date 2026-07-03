@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 import { connectDB } from '../config/db.js';
 import Lead from '../models/Lead.js';
 import Task from '../models/Task.js';

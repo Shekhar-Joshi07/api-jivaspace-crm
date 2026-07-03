@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 const propertySchema = new mongoose.Schema({
   title: { type: String, required: true },
   type: { type: String, enum: ['Apartment','Villa','Plot','Commercial','Office','Shop'], required: true },

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 
 export const USER_ROLES = [
   'superadmin',
