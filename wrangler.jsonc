@@ -1,8 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "jivaspace-crm-api",
+  "name": "api-jivaspace-crm",
   "main": "src/cloudflare-worker.js",
   "compatibility_date": "2026-07-03",
+  "keep_vars": true,
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -15,12 +16,5 @@
     "JWT_AUDIENCE": "complete-crm-client",
     "MAX_FILE_SIZE_MB": "10",
     "MONGO_SERVER_SELECTION_TIMEOUT_MS": "10000"
-  },
-  "secrets": {
-    "required": [
-      "MONGO_URI",
-      "JWT_SECRET",
-      "CLIENT_URL"
-    ]
   }
 }

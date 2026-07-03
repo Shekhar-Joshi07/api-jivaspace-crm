@@ -233,6 +233,8 @@ npx wrangler secret put CLIENT_URL
 
 `CLIENT_URL` must be the full Cloudflare Pages frontend origin, for example `https://your-frontend.pages.dev`. To allow multiple frontend origins, use a comma-separated value.
 
+If deploying through Cloudflare's connected Git build UI instead of your terminal, add `CLIENT_URL`, `JWT_SECRET`, and `MONGO_URI` under **Variables and secrets** for the Worker project. Keep `JWT_SECRET` and `MONGO_URI` as secrets because both contain sensitive values.
+
 Optional provider secrets, only if email or SMS should work in production:
 
 ```powershell
