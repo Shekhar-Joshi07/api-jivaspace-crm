@@ -33,3 +33,13 @@ test('registration input is validated before database access', async () => {
   assert.equal(response.body.message, 'Validation failed');
   assert.ok(response.body.errors.length >= 3);
 });
+
+test('website enquiry validates visitor details before creating a lead', async () => {
+  const response = await request(app)
+    .post('/api/leads/website-enquiry')
+    .send({ name: 'Website Visitor' })
+    .expect(422);
+
+  assert.equal(response.body.success, false);
+  assert.match(response.body.message, /phone is required/i);
+});

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import mongoose from 'mongoose';
-import Lead from '../src/models/Lead.js';
+import Lead, { LEAD_SOURCES } from '../src/models/Lead.js';
 import Task from '../src/models/Task.js';
 import User, { USER_ROLES, normalizeUserRole } from '../src/models/User.js';
 
@@ -31,6 +31,32 @@ test('CRM models accept the required production fields', async () => {
   await task.validate();
   assert.equal(lead.nextFollowUp.getTime(), lead.followUpDate.getTime());
   assert.equal(String(task.lead), String(task.relatedLead));
+});
+
+test('Email is an accepted lead source', async () => {
+  const owner = id();
+  const lead = new Lead({
+    name: 'Email Lead',
+    phone: '9000000001',
+    source: 'Email',
+    createdBy: owner
+  });
+
+  assert.ok(LEAD_SOURCES.includes('Email'));
+  await lead.validate();
+});
+
+test('property types are normalized before lead validation', async () => {
+  const owner = id();
+  const lead = new Lead({
+    name: 'Commercial Lead',
+    phone: '9000000002',
+    propertyType: 'commercial',
+    createdBy: owner
+  });
+
+  await lead.validate();
+  assert.equal(lead.propertyType, 'Commercial');
 });
 
 test('unsupported user roles fail model validation', async () => {

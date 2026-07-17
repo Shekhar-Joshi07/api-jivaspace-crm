@@ -101,15 +101,13 @@ export const updateUser = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   if (String(req.user._id) === String(req.params.id)) {
-    throw new ApiError(400, 'You cannot deactivate your own account');
+    throw new ApiError(400, 'You cannot delete your own account');
   }
   const user = await User.findById(req.params.id);
   if (!user) throw new ApiError(404, 'User not found');
   if (user.role === 'superadmin' && !isSuperAdmin(req.user)) {
-    throw new ApiError(403, 'Only a Super Admin can deactivate a Super Admin');
+    throw new ApiError(403, 'Only a Super Admin can delete a Super Admin');
   }
-  user.isActive = false;
-  user.updatedBy = req.user._id;
-  await user.save({ validateBeforeSave: false });
-  return sendSuccess(res, { message: 'User deactivated successfully' });
+  await user.deleteOne();
+  return sendSuccess(res, { message: 'User deleted successfully' });
 };

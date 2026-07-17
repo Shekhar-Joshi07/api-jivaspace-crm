@@ -9,6 +9,7 @@ const publicUser = user => ({
   id: user._id,
   _id: user._id,
   name: user.name,
+  employeeId: user.employeeId,
   email: user.email,
   role: user.role,
   phone: user.phone,
@@ -44,13 +45,19 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const normalizedEmail = req.body.email.trim().toLowerCase();
-  const user = await User.findOne({ email: normalizedEmail }).select('+password');
+  const username = (req.body.username || req.body.email || '').trim();
+  const user = await User.findOne({
+    $or: [
+      { employeeId: username.toUpperCase() },
+      { name: new RegExp(`^${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      { email: username.toLowerCase() }
+    ]
+  }).select('+password');
 
   if (!user || !(await user.matchPassword(req.body.password))) {
-    throw new ApiError(401, 'Invalid email or password');
+    throw new ApiError(401, 'Invalid username or password');
   }
-  if (!user.isActive) throw new ApiError(403, 'This account has been deactivated');
+  if (user.isActive === false) throw new ApiError(403, 'This account has been deactivated');
 
   user.role = normalizeUserRole(user.role);
   if (user.role === 'admin' && !(await User.exists({ role: 'superadmin' }))) {

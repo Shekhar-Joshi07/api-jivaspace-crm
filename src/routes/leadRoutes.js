@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import {
   addNote,
   addActivityTimelineEntry,
@@ -9,6 +10,7 @@ import {
   deleteLead,
   exportLeadsToExcel,
   checkDuplicateMobile,
+  createWebsiteEnquiry,
   getCalendarFollowUps,
   getLead,
   getLeadResponses,
@@ -41,6 +43,17 @@ import {
 import { ADMIN_ROLES, CRM_ROLES } from '../utils/accessControl.js';
 
 const router = express.Router();
+
+const websiteEnquiryLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many enquiries. Please try again later.' }
+});
+
+// Public endpoint used by the Jiva Space website's Enquire Now form.
+router.post('/website-enquiry', websiteEnquiryLimiter, asyncHandler(createWebsiteEnquiry));
 router.use(protect, authorize(...CRM_ROLES));
 
 router.get('/pipeline', asyncHandler(getPipeline));

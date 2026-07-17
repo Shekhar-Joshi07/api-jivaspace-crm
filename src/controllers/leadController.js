@@ -307,6 +307,59 @@ export const checkDuplicateMobile = async (req, res) => {
   });
 };
 
+export const createWebsiteEnquiry = async (req, res) => {
+  const name = String(req.body.name || req.body.fullName || '').trim();
+  const phone = String(req.body.phone || req.body.mobile || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const message = String(req.body.message || req.body.remarks || '').trim();
+
+  if (!name) throw new ApiError(422, 'Full name is required');
+  if (!phone) throw new ApiError(422, 'Phone is required');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApiError(422, 'Enter a valid email address');
+  }
+
+  const assignee = await User.findOne({ role: 'superadmin', isActive: true }).sort('_id')
+    || await User.findOne({ role: 'admin', isActive: true }).sort('_id');
+  if (!assignee) throw new ApiError(503, 'Website enquiries are temporarily unavailable');
+
+  const propertyTitle = String(req.body.propertyTitle || req.body.property || '').trim();
+  const sourceDetails = propertyTitle
+    ? `Jiva Space website enquiry for ${propertyTitle}`
+    : 'Jiva Space website enquiry';
+  const lead = await Lead.create({
+    name,
+    phone,
+    email: email || undefined,
+    source: 'Website',
+    sourceDetails,
+    status: 'New',
+    assignedTo: assignee._id,
+    assignedBy: assignee._id,
+    assignedAt: new Date(),
+    createdBy: assignee._id,
+    updatedBy: assignee._id,
+    statusHistory: [{ to: 'New', changedBy: assignee._id }],
+    notes: message ? [{ text: message, createdBy: assignee._id }] : []
+  });
+
+  await recordActivity({
+    lead: lead._id,
+    user: assignee._id,
+    type: 'Lead Created',
+    description: `Website enquiry received from ${lead.name}`,
+    channel: 'System',
+    direction: 'Inbound',
+    metadata: { source: 'Website', ipAddress: req.ip }
+  });
+
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: 'Thank you. Your enquiry has been received.',
+    data: { id: lead._id }
+  });
+};
+
 export const createLead = async (req, res) => {
   const payload = normalizeLeadInput(req.body);
   payload.assignedTo ||= req.user._id;

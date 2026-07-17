@@ -1,16 +1,8 @@
 import mongoose from 'mongoose';
+import { normalizePropertyType, PROPERTY_TYPES } from '../utils/propertyTypes.js';
 
 export const PROJECT_STATUSES = ['Upcoming', 'Ongoing', 'Ready to Move', 'Sold Out'];
-export const PROJECT_PROPERTY_TYPES = [
-  'Apartment',
-  'Villa',
-  'Plot',
-  'Builder Floor',
-  'Office',
-  'Shop',
-  'Warehouse',
-  'Other'
-];
+export const PROJECT_PROPERTY_TYPES = PROPERTY_TYPES;
 
 const projectSchema = new mongoose.Schema(
   {
@@ -99,6 +91,8 @@ projectSchema.pre('validate', function syncLegacyFields() {
   if (!this.developerName && this.builderName) this.developerName = this.builderName;
   if (!this.propertyType && this.type) this.propertyType = this.type;
   if (!this.type && this.propertyType) this.type = this.propertyType;
+  if (this.propertyType) this.propertyType = normalizePropertyType(this.propertyType);
+  if (this.type) this.type = normalizePropertyType(this.type);
   if (!this.brochure && this.brochureUrl) this.brochure = this.brochureUrl;
   if (!this.brochureUrl && this.brochure) this.brochureUrl = this.brochure;
   if (this.availableUnits != null && this.totalUnits != null && this.availableUnits > this.totalUnits) {

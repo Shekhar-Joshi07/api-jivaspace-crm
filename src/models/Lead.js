@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { normalizePropertyType, PROPERTY_TYPES } from '../utils/propertyTypes.js';
 
 export const LEAD_STATUSES = [
   'New',
@@ -23,7 +24,10 @@ export const LEAD_SOURCES = [
   'Housing.com',
   'Referral',
   'Walk-in',
+  'Email',
+  'Phone',
   'Outbound Call',
+  'Partner',
   'Channel Partner',
   'Other'
 ];
@@ -91,7 +95,7 @@ const leadSchema = new mongoose.Schema(
     },
     propertyType: {
       type: String,
-      enum: ['Apartment', 'Villa', 'Plot', 'Builder Floor', 'Office', 'Shop', 'Warehouse', 'Other']
+      enum: PROPERTY_TYPES
     },
     configuration: { type: String, trim: true, maxlength: 100 },
     budget: { type: Number, min: [0, 'Budget cannot be negative'] },
@@ -127,6 +131,7 @@ leadSchema.index({ createdAt: -1, source: 1 });
 leadSchema.index({ name: 'text', email: 'text', phone: 'text' });
 
 leadSchema.pre('validate', function synchronizeFollowUpFields() {
+  if (this.propertyType) this.propertyType = normalizePropertyType(this.propertyType);
   if (this.followUpDate && !this.nextFollowUp) this.nextFollowUp = this.followUpDate;
   if (this.nextFollowUp && !this.followUpDate) this.followUpDate = this.nextFollowUp;
   if (this.budget != null && this.budgetMax != null && this.budgetMax < this.budget) {

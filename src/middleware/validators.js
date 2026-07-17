@@ -5,6 +5,7 @@ import { AVAILABILITY_STATUSES, PROPERTY_UNIT_BHK } from '../models/PropertyUnit
 import { PROJECT_PROPERTY_TYPES, PROJECT_STATUSES } from '../models/Project.js';
 import { TASK_STATUSES } from '../models/Task.js';
 import { USER_ROLES } from '../models/User.js';
+import { normalizePropertyType, PROPERTY_TYPES } from '../utils/propertyTypes.js';
 
 const passwordRule = field => body(field)
   .isLength({ min: 8, max: 128 })
@@ -24,7 +25,14 @@ export const registerRules = [
 ];
 
 export const loginRules = [
-  body('email').trim().isEmail().normalizeEmail(),
+  body('username').optional({ checkFalsy: true }).trim().isLength({ max: 100 }),
+  body('email').optional({ checkFalsy: true }).trim().isEmail().normalizeEmail(),
+  body().custom((_, { req }) => {
+    if (!(req.body.username || req.body.email)) {
+      throw new Error('Username is required');
+    }
+    return true;
+  }),
   body('password').isString().notEmpty()
 ];
 
@@ -68,8 +76,8 @@ const leadFieldRules = [
   body('preferredLocation').optional({ nullable: true }).trim().isLength({ max: 300 }),
   body('interestedProject').optional({ checkFalsy: true }).isMongoId(),
   body('project').optional({ checkFalsy: true }).isMongoId(),
-  body('interestedPropertyType').optional({ nullable: true }).isString().isLength({ max: 100 }),
-  body('propertyType').optional({ nullable: true }).isString().isLength({ max: 100 }),
+  body('interestedPropertyType').optional({ nullable: true }).isString().trim().customSanitizer(normalizePropertyType).isIn(PROPERTY_TYPES),
+  body('propertyType').optional({ nullable: true }).isString().trim().customSanitizer(normalizePropertyType).isIn(PROPERTY_TYPES),
   body('remarks').optional({ nullable: true }).isLength({ max: 5000 }),
   body('estimatedValue').optional({ checkFalsy: true }).isFloat({ min: 0 }).toFloat(),
   body('revenue').optional({ checkFalsy: true }).isFloat({ min: 0 }).toFloat(),

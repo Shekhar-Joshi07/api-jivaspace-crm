@@ -36,12 +36,12 @@ npm run reminders
 
 Demo password for all seeded users: `Demo@123`.
 
-| Role | Email |
+| Role | Username |
 | --- | --- |
-| Superadmin | `superadmin@jivaspace.com` |
-| Admin | `admin@jivaspace.com` |
-| Business Executive | `executive@jivaspace.com` |
-| Business Executive | `executive2@jivaspace.com` |
+| Superadmin | `SUPERADMIN` |
+| Admin | `ADMIN` |
+| Business Executive | `EXECUTIVE` |
+| Business Executive | `EXECUTIVE2` |
 
 ## Roles and access
 

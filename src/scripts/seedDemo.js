@@ -15,6 +15,7 @@ const demoPassword = 'Demo@123';
 const users = [
   {
     name: 'Demo Superadmin',
+    employeeId: 'SUPERADMIN',
     email: 'superadmin@jivaspace.com',
     password: demoPassword,
     role: 'superadmin',
@@ -22,6 +23,7 @@ const users = [
   },
   {
     name: 'Meera Admin',
+    employeeId: 'ADMIN',
     email: 'admin@jivaspace.com',
     password: demoPassword,
     role: 'admin',
@@ -29,6 +31,7 @@ const users = [
   },
   {
     name: 'Aarav Business Executive',
+    employeeId: 'EXECUTIVE',
     email: 'executive@jivaspace.com',
     password: demoPassword,
     role: 'business_executive',
@@ -36,6 +39,7 @@ const users = [
   },
   {
     name: 'Ishita Business Executive',
+    employeeId: 'EXECUTIVE2',
     email: 'executive2@jivaspace.com',
     password: demoPassword,
     role: 'business_executive',
@@ -224,6 +228,7 @@ async function upsertUsers() {
       user = await User.create(userData);
     } else {
       user.name = userData.name;
+      user.employeeId = userData.employeeId;
       user.role = userData.role;
       user.phone = userData.phone;
       user.password = userData.password;
@@ -371,7 +376,7 @@ try {
   console.log(`Tasks: ${taskDocs.length}`);
   console.log(`Teams: ${teamDocs.length}`);
   console.log(`Transfer Logs: ${transferDocs.length}`);
-  console.log('Login email: superadmin@jivaspace.com');
+  console.log('Login username: SUPERADMIN');
   console.log(`Login password: ${demoPassword}`);
 } catch (error) {
   console.error(error);
