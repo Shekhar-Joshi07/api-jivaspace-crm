@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 
 export const AVAILABILITY_STATUSES = ['Available', 'Hold', 'Booked', 'Sold'];
 export const PROPERTY_UNIT_BHK = ['1 RK', '1 BHK', '2 BHK', '3 BHK', '4 BHK', '5 BHK', 'Studio', 'Duplex', 'Penthouse', 'Other'];

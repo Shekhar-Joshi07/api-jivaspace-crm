@@ -1,6 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 import { PROPERTY_TYPES } from '../utils/propertyTypes.js';
-
 const propertySchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 200 },
   slug: { type: String, trim: true, lowercase: true, maxlength: 220, unique: true, sparse: true },

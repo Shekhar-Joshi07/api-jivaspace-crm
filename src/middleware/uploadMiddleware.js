@@ -1,14 +1,18 @@
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import multer from 'multer';
 import { ApiError } from '../utils/ApiError.js';
 
-const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-export const uploadDirectory = path.resolve(currentDirectory, '../../uploads');
-export const propertyImageDirectory = path.resolve(uploadDirectory, 'property-images');
-mkdirSync(uploadDirectory, { recursive: true });
-mkdirSync(propertyImageDirectory, { recursive: true });
+const baseDirectory = typeof process.cwd === 'function' ? process.cwd() : '.';
+export const uploadDirectory = path.resolve(process.env.UPLOAD_DIR || path.join(baseDirectory, 'uploads'));
+export const propertyImageDirectory = path.join(uploadDirectory, 'property-images');
+
+try {
+  mkdirSync(uploadDirectory, { recursive: true });
+  mkdirSync(propertyImageDirectory, { recursive: true });
+} catch (error) {
+  if (!['EACCES', 'ENOSYS', 'EPERM', 'EROFS'].includes(error.code)) throw error;
+}
 
 const safeFileName = fileName => path
   .basename(fileName)

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 import Lead from '../models/Lead.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 import { normalizePropertyType, PROPERTY_TYPES } from '../utils/propertyTypes.js';
 
 export const LEAD_STATUSES = [

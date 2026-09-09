@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 
 export const TASK_STATUSES = ['Pending', 'In Progress', 'Completed', 'Cancelled'];
 export const TASK_TYPES = [

@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 import User from '../models/User.js';
 import Lead from '../models/Lead.js';
 import Property from '../models/Property.js';

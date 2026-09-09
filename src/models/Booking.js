@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 
 export const BOOKING_STATUSES = ['Pending', 'Confirmed', 'Cancelled', 'Converted to Sale'];
 export const PAYMENT_MODES = ['Cash', 'Cheque', 'Bank Transfer', 'UPI', 'Card', 'Other'];

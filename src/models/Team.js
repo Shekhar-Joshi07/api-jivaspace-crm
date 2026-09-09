@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
 
 const teamSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true, trim: true },

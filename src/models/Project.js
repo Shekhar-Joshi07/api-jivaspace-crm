@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { normalizePropertyType, PROPERTY_TYPES } from '../utils/propertyTypes.js';
 
 export const PROJECT_STATUSES = ['Upcoming', 'Ongoing', 'Ready to Move', 'Sold Out'];
 export const PROJECT_PROPERTY_TYPES = PROPERTY_TYPES;
