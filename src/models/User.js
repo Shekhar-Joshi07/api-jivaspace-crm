@@ -74,6 +74,12 @@ const userSchema = new mongoose.Schema(
     },
     avatarUrl: { type: String, trim: true },
     isActive: { type: Boolean, default: true, index: true },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved'],
+      default: 'approved',
+      index: true
+    },
     lastLoginAt: Date,
     passwordChangedAt: Date,
     resetPasswordToken: { type: String, select: false },

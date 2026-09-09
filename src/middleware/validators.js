@@ -43,6 +43,27 @@ export const changePasswordRules = [
   passwordRule('newPassword')
 ];
 
+export const attendanceLocationRules = [
+  body('latitude').isFloat({ min: -90, max: 90 }).toFloat(),
+  body('longitude').isFloat({ min: -180, max: 180 }).toFloat(),
+  body('accuracyMeters').optional().isFloat({ min: 0, max: 10000 }).toFloat()
+];
+
+export const attendanceConfigRules = [
+  body('name').trim().notEmpty().isLength({ max: 120 }),
+  body('latitude').isFloat({ min: -90, max: 90 }).toFloat(),
+  body('longitude').isFloat({ min: -180, max: 180 }).toFloat(),
+  body('radiusMeters').isFloat({ min: 25, max: 10000 }).toFloat(),
+  body('isEnabled').isBoolean().toBoolean()
+];
+
+export const validateAttendanceAuditRules = [
+  query('user').optional().isMongoId(),
+  query('from').optional().isISO8601(),
+  query('to').optional().isISO8601(),
+  query('status').optional().isIn(['in-progress', 'present'])
+];
+
 export const createUserRules = [
   ...registerRules,
   body('role').isIn(USER_ROLES).withMessage(`Role must be one of: ${USER_ROLES.join(', ')}`)

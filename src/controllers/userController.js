@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import { sendAccountApprovedEmail } from '../services/emailService.js';
 import { getManagedUserIds, isAdmin, isSuperAdmin } from '../utils/accessControl.js';
 import { ApiError } from '../utils/ApiError.js';
 import { getPagination, paginationMeta, sendSuccess } from '../utils/apiResponse.js';
@@ -40,6 +41,13 @@ export const getUsers = async (req, res) => {
   if (req.query.role) filter.role = req.query.role;
   if (req.query.reportingManager) filter.reportingManager = req.query.reportingManager;
   if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
+  if (req.query.approvalStatus) filter.approvalStatus = req.query.approvalStatus;
+  if (req.query.accountStatus === 'pending') filter.approvalStatus = 'pending';
+  if (req.query.accountStatus === 'active') filter.isActive = true;
+  if (req.query.accountStatus === 'inactive') {
+    filter.isActive = false;
+    filter.approvalStatus = { $ne: 'pending' };
+  }
   if (req.query.search) {
     const search = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     filter.$or = ['name', 'email', 'phone', 'employeeId']
@@ -86,6 +94,9 @@ export const updateUser = async (req, res) => {
   if (String(req.user._id) === String(user._id) && req.body.role && req.body.role !== user.role) {
     throw new ApiError(400, 'You cannot change your own role');
   }
+  if (user.approvalStatus === 'pending' && req.body.isActive === true) {
+    throw new ApiError(400, 'Approve this account using the approval action');
+  }
   assertRoleAllowed(req.user, req.body.role);
   await assertManagerExists(req.body.reportingManager);
   for (const field of editableFields) {
@@ -95,6 +106,25 @@ export const updateUser = async (req, res) => {
   await user.save();
   return sendSuccess(res, {
     message: 'User updated successfully',
+    data: await populateUser(User.findById(user._id))
+  });
+};
+
+export const approveUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) throw new ApiError(404, 'User not found');
+  if (user.approvalStatus !== 'pending') {
+    throw new ApiError(409, 'This account has already been approved');
+  }
+
+  user.approvalStatus = 'approved';
+  user.isActive = true;
+  user.updatedBy = req.user._id;
+  await user.save();
+  await sendAccountApprovedEmail({ user });
+
+  return sendSuccess(res, {
+    message: 'Account approved and approval email sent',
     data: await populateUser(User.findById(user._id))
   });
 };

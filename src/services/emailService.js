@@ -48,3 +48,10 @@ export const sendPasswordResetEmail = async ({ user, resetUrl }) => sendEmail({
   text: `Use this link to reset your password: ${resetUrl}. The link expires in 30 minutes.`,
   html: `<p>Hello ${user.name},</p><p>Use the link below to reset your password. It expires in 30 minutes.</p><p><a href="${resetUrl}">Reset password</a></p>`
 });
+
+export const sendAccountApprovedEmail = async ({ user }) => sendEmail({
+  to: user.email,
+  subject: 'Your CRM account has been approved',
+  text: `Hello ${user.name}, your CRM account has been approved. You can now sign in at ${process.env.CLIENT_URL?.split(',')[0] || 'the CRM login page'}.`,
+  html: `<p>Hello ${user.name},</p><p>Your CRM account has been approved. You can now sign in to the workspace.</p><p><a href="${process.env.CLIENT_URL?.split(',')[0] || 'http://localhost:5173'}">Sign in to CRM</a></p>`
+});

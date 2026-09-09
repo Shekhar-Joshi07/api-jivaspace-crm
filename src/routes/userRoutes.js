@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, deleteUser, getUser, getUsers, updateUser } from '../controllers/userController.js';
+import { approveUser, createUser, deleteUser, getUser, getUsers, updateUser } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { authorize } from '../middleware/roleMiddleware.js';
@@ -11,6 +11,7 @@ const router = express.Router();
 router.use(protect);
 router.get('/', authorize(...SUPERADMIN_ROLES), asyncHandler(getUsers));
 router.post('/', authorize(...SUPERADMIN_ROLES), createUserRules, validateRequest, asyncHandler(createUser));
+router.patch('/:id/approve', authorize(...SUPERADMIN_ROLES), idParam(), validateRequest, asyncHandler(approveUser));
 router.get('/:id', authorize(...SUPERADMIN_ROLES), idParam(), validateRequest, asyncHandler(getUser));
 router.put('/:id', authorize(...SUPERADMIN_ROLES), idParam(), updateUserRules, validateRequest, asyncHandler(updateUser));
 router.delete('/:id', authorize(...SUPERADMIN_ROLES), idParam(), validateRequest, asyncHandler(deleteUser));

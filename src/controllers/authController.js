@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import User, { normalizeUserRole } from '../models/User.js';
+import { createNotifications } from '../services/notificationService.js';
 import { sendPasswordResetEmail } from '../services/emailService.js';
 import { ApiError } from '../utils/ApiError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
@@ -25,15 +26,35 @@ export const register = async (req, res) => {
     throw new ApiError(409, 'An account with this email already exists');
   }
 
-  // The first account bootstraps the system. Later public signups are least-privileged.
+  // The first account bootstraps the system. Later self-service signups require approval.
   const isFirstUser = (await User.countDocuments()) === 0;
   const user = await User.create({
     name,
     email: normalizedEmail,
     password,
     phone,
-    role: isFirstUser ? 'superadmin' : 'sales_executive'
+    role: isFirstUser ? 'superadmin' : 'sales_executive',
+    isActive: isFirstUser,
+    approvalStatus: isFirstUser ? 'approved' : 'pending'
   });
+
+  if (!isFirstUser) {
+    const superadmins = await User.find({ role: 'superadmin', isActive: true }).select('_id');
+    await createNotifications(superadmins.map(superadmin => ({
+      user: superadmin._id,
+      title: 'New account approval request',
+      message: `${user.name} (${user.email}) requested access to the CRM. Approve the account from User Management.`,
+      type: 'general',
+      priority: 'High',
+      channels: ['in_app'],
+      actionUrl: '/users'
+    })));
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account request submitted. You will receive an email once a Super Admin approves it.'
+    });
+  }
 
   const token = generateToken(user);
   return res.status(201).json({
@@ -56,6 +77,9 @@ export const login = async (req, res) => {
 
   if (!user || !(await user.matchPassword(req.body.password))) {
     throw new ApiError(401, 'Invalid username or password');
+  }
+  if (user.approvalStatus === 'pending') {
+    throw new ApiError(403, 'Your account is awaiting Super Admin approval');
   }
   if (user.isActive === false) throw new ApiError(403, 'This account has been deactivated');
 

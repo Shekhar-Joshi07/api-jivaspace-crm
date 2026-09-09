@@ -2,7 +2,7 @@ import { unlink } from 'node:fs/promises';
 import Activity, { ACTIVITY_TYPES } from '../models/Activity.js';
 import Booking from '../models/Booking.js';
 import FileRecord from '../models/File.js';
-import Lead, { LEAD_STATUSES } from '../models/Lead.js';
+import Lead, { LEAD_SOURCES, LEAD_STATUSES } from '../models/Lead.js';
 import LeadTransferLog from '../models/LeadTransferLog.js';
 import Notification from '../models/Notification.js';
 import SiteVisit from '../models/SiteVisit.js';
@@ -828,6 +828,57 @@ export const importLeadsFromExcel = async (req, res) => {
     message: 'Lead import completed',
     data: await importRows(rows, req)
   });
+};
+
+export const downloadLeadImportTemplate = async (_req, res) => {
+  const buffer = createWorkbookBuffer([
+    {
+      name: 'Lead Import',
+      rows: [{
+        name: 'Aarav Sharma',
+        phone: '9876543210',
+        email: 'aarav@example.com',
+        source: 'Website',
+        status: 'New',
+        priority: 'Medium',
+        purpose: 'Buy',
+        propertyType: 'Apartment',
+        configuration: '3 BHK',
+        preferredLocation: 'Noida Sector 150',
+        followUpDate: '2026-09-15',
+        budget: 5000000,
+        budgetMax: 7500000,
+        estimatedValue: 6000000,
+        revenue: 0,
+        requirement: 'Looking for a ready-to-move apartment'
+      }]
+    },
+    {
+      name: 'Instructions',
+      rows: [
+        { Column: 'name', Required: 'Yes', Details: 'Customer name' },
+        { Column: 'phone', Required: 'Yes', Details: 'Mobile or phone number' },
+        { Column: 'email', Required: 'No', Details: 'Valid email address' },
+        { Column: 'source', Required: 'No', Details: `One of: ${LEAD_SOURCES.join(', ')}` },
+        { Column: 'status', Required: 'No', Details: `One of: ${LEAD_STATUSES.join(', ')}` },
+        { Column: 'priority', Required: 'No', Details: 'Low, Medium, High, or Hot' },
+        { Column: 'purpose', Required: 'No', Details: 'Buy, Rent, or Investment' },
+        { Column: 'propertyType', Required: 'No', Details: 'For example: Apartment, Villa, Plot, Office, or Shop' },
+        { Column: 'configuration', Required: 'No', Details: 'For example: 2 BHK or 3 BHK' },
+        { Column: 'preferredLocation', Required: 'No', Details: 'Customer preferred area or city' },
+        { Column: 'followUpDate', Required: 'No', Details: 'Use YYYY-MM-DD, for example 2026-09-15' },
+        { Column: 'budget', Required: 'No', Details: 'Minimum budget as a number, without currency symbols' },
+        { Column: 'budgetMax', Required: 'No', Details: 'Maximum budget as a number, without currency symbols' },
+        { Column: 'estimatedValue', Required: 'No', Details: 'Estimated deal value as a number' },
+        { Column: 'revenue', Required: 'No', Details: 'Expected revenue as a number' },
+        { Column: 'requirement', Required: 'No', Details: 'Customer requirement or notes' }
+      ]
+    }
+  ]);
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="lead-import-template.xlsx"');
+  return res.send(buffer);
 };
 
 export const exportLeadsToExcel = async (req, res) => {

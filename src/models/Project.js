@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose from '../config/mongoose.js';
+import { PROPERTY_TYPES } from '../utils/propertyTypes.js';
 
 export const PROJECT_STATUSES = ['Upcoming', 'Ongoing', 'Ready to Move', 'Sold Out'];
 export const PROJECT_PROPERTY_TYPES = PROPERTY_TYPES;

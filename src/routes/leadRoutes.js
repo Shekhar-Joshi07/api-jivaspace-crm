@@ -11,6 +11,7 @@ import {
   exportLeadsToExcel,
   checkDuplicateMobile,
   createWebsiteEnquiry,
+  downloadLeadImportTemplate,
   getCalendarFollowUps,
   getLead,
   getLeadResponses,
@@ -61,6 +62,7 @@ router.get('/responses', asyncHandler(getLeadResponses));
 router.get('/pending', asyncHandler(getPendingLeads));
 router.get('/calendar', asyncHandler(getCalendarFollowUps));
 router.get('/export', authorize(...ADMIN_ROLES), asyncHandler(exportLeadsToExcel));
+router.get('/import-template', authorize(...ADMIN_ROLES), asyncHandler(downloadLeadImportTemplate));
 router.get('/duplicate-mobile', duplicateMobileRules, validateRequest, asyncHandler(checkDuplicateMobile));
 router.post('/import', authorize(...ADMIN_ROLES), uploadSpreadsheet.single('file'), asyncHandler(importLeadsFromExcel));
 router.post('/bulk-import', authorize(...ADMIN_ROLES), asyncHandler(bulkImportLeads));
