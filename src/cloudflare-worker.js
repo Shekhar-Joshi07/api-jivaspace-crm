@@ -6,6 +6,7 @@ const handler = httpServerHandler({ port });
 let startupPromise;
 
 const envKeys = [
+  'NODE_ENV',
   'MONGO_URI',
   'DB_URL',
   'JWT_SECRET',
@@ -39,6 +40,7 @@ const copyEnv = source => {
 const startApp = async runtimeEnv => {
   copyEnv(workerEnv);
   copyEnv(runtimeEnv);
+  process.env.CLOUDFLARE_WORKER = 'true';
 
   const [{ default: app }, { connectDB }, { validateEnvironment }] = await Promise.all([
     import('./app.js'),
