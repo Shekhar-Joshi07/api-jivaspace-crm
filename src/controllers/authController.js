@@ -67,6 +67,9 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   const username = (req.body.username || req.body.email || '').trim();
+  if (typeof req.body.password !== 'string' || !req.body.password) {
+    throw new ApiError(422, 'Password is required');
+  }
   const user = await User.findOne({
     $or: [
       { employeeId: username.toUpperCase() },

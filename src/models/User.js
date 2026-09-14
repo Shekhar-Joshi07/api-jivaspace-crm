@@ -105,12 +105,19 @@ userSchema.index({ reportingManager: 1, isActive: 1 });
 
 userSchema.pre('save', async function hashPassword() {
   if (!this.isModified('password')) return;
-  this.password = await bcrypt.hash(this.password, 12);
+  // bcryptjs async operations yield through setImmediate. That continuation is
+  // not reliable behind Cloudflare's Node HTTP adapter, so complete the work
+  // within the current Worker invocation instead.
+  this.password = process.env.CLOUDFLARE_WORKER === 'true'
+    ? bcrypt.hashSync(this.password, 12)
+    : await bcrypt.hash(this.password, 12);
   this.passwordChangedAt = new Date();
 });
 
 userSchema.methods.matchPassword = function matchPassword(password) {
-  return bcrypt.compare(password, this.password);
+  return process.env.CLOUDFLARE_WORKER === 'true'
+    ? bcrypt.compareSync(password, this.password)
+    : bcrypt.compare(password, this.password);
 };
 
 export default mongoose.model('User', userSchema);
