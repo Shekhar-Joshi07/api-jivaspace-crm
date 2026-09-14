@@ -34,45 +34,23 @@ const publicConfiguration = configuration => ({
   radiusMeters: configuration?.radiusMeters || null
 });
 
-const getActiveConfiguration = async () => {
-  const configuration = await AttendanceConfig.findOne({ key: 'primary' });
-  if (!configuration) throw new ApiError(503, 'Attendance location has not been configured by the Super Admin');
-  if (!configuration.isEnabled) throw new ApiError(403, 'Attendance is currently unavailable');
-  return configuration;
-};
-
-const locationFromRequest = (req, configuration) => {
+const locationFromRequest = req => {
   const latitude = Number(req.body.latitude);
   const longitude = Number(req.body.longitude);
   const accuracyMeters = req.body.accuracyMeters === undefined ? undefined : Number(req.body.accuracyMeters);
-  const distanceMeters = distanceInMeters(latitude, longitude, configuration.latitude, configuration.longitude);
-
-  if (distanceMeters > configuration.radiusMeters) {
-    throw new ApiError(403, `You must be within ${configuration.radiusMeters} metres of ${configuration.name} to mark attendance`);
-  }
 
   return {
     at: new Date(),
     latitude,
     longitude,
     accuracyMeters,
-    distanceMeters: Math.round(distanceMeters)
+    distanceMeters: 0
   };
 };
 
-const officeSnapshot = configuration => ({
-  name: configuration.name,
-  latitude: configuration.latitude,
-  longitude: configuration.longitude,
-  radiusMeters: configuration.radiusMeters
-});
-
 export const getTodayAttendance = async (req, res) => {
-  const [configuration, attendance] = await Promise.all([
-    AttendanceConfig.findOne({ key: 'primary' }),
-    Attendance.findOne({ user: req.user._id, dateKey: dateKeyFor(new Date()) })
-  ]);
-  return sendSuccess(res, { data: { configuration: publicConfiguration(configuration), attendance } });
+  const attendance = await Attendance.findOne({ user: req.user._id, dateKey: dateKeyFor(new Date()) });
+  return sendSuccess(res, { data: { attendance } });
 };
 
 export const checkIn = async (req, res) => {
@@ -80,12 +58,10 @@ export const checkIn = async (req, res) => {
   const existing = await Attendance.findOne({ user: req.user._id, dateKey });
   if (existing) throw new ApiError(409, 'You have already checked in today');
 
-  const configuration = await getActiveConfiguration();
   const attendance = await Attendance.create({
     user: req.user._id,
     dateKey,
-    checkIn: locationFromRequest(req, configuration),
-    office: officeSnapshot(configuration)
+    checkIn: locationFromRequest(req)
   });
   return sendSuccess(res, {
     statusCode: 201,
@@ -99,8 +75,7 @@ export const checkOut = async (req, res) => {
   if (!attendance) throw new ApiError(404, 'Check in before recording a check-out');
   if (attendance.checkOut) throw new ApiError(409, 'You have already checked out today');
 
-  const configuration = await getActiveConfiguration();
-  attendance.checkOut = locationFromRequest(req, configuration);
+  attendance.checkOut = locationFromRequest(req);
   await attendance.save();
   return sendSuccess(res, { message: 'Check-out recorded successfully', data: attendance });
 };
