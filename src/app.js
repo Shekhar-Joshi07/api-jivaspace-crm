@@ -25,6 +25,7 @@ import userRoutes from './routes/userRoutes.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import { propertyImageDirectory } from './middleware/uploadMiddleware.js';
 import { ApiError } from './utils/ApiError.js';
+import { clientIpKey } from './utils/rateLimit.js';
 
 const app = express();
 const isCloudflareWorker = process.env.CLOUDFLARE_WORKER === 'true';
@@ -62,7 +63,8 @@ if (process.env.NODE_ENV !== 'test' && !isCloudflareWorker) {
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
-  standardHeaders: 'draft-8',
+  keyGenerator: clientIpKey,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { success: false, message: 'Too many authentication attempts. Try again later.' }
 });

@@ -42,13 +42,15 @@ import {
   updateLeadStatusRules
 } from '../middleware/validators.js';
 import { ADMIN_ROLES, CRM_ROLES } from '../utils/accessControl.js';
+import { clientIpKey } from '../utils/rateLimit.js';
 
 const router = express.Router();
 
 const websiteEnquiryLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
-  standardHeaders: 'draft-8',
+  keyGenerator: clientIpKey,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { success: false, message: 'Too many enquiries. Please try again later.' }
 });
