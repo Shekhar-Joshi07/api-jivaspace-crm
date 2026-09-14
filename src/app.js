@@ -40,7 +40,9 @@ const allowedOrigins = [
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(compression());
+// Cloudflare compresses responses at the edge. Its Node HTTP adapter does not
+// reliably complete compression's zlib response streams for browser requests.
+if (!isCloudflareWorker) app.use(compression());
 app.use(cors({
   origin(origin, callback) {
     const normalizedOrigin = origin?.replace(/\/$/, '');
