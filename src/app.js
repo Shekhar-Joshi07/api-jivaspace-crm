@@ -72,6 +72,7 @@ app.get('/', (_req, res) => res.json({
 app.get('/api/health', (_req, res) => res.json({
   success: true,
   status: 'ok',
+  database: app.locals.databaseStatus || 'connecting',
   timestamp: new Date().toISOString(),
   uptime: process.uptime()
 }));

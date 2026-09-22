@@ -9,9 +9,29 @@ const port = Number(process.env.PORT || 5000);
 // interface rather than relying on the platform-specific Node default.
 const host = process.env.HOST || '0.0.0.0';
 let server;
+let reconnectTimer;
+
+const connectDatabaseInBackground = async () => {
+  app.locals.databaseStatus = 'connecting';
+
+  try {
+    await connectDB();
+    app.locals.databaseStatus = 'connected';
+  } catch (error) {
+    app.locals.databaseStatus = 'unavailable';
+    console.error('MongoDB connection failed:', error.message);
+
+    // Keep the web process available for health checks while retrying a
+    // temporarily unavailable managed database connection.
+    reconnectTimer = setTimeout(() => {
+      void connectDatabaseInBackground();
+    }, 30_000);
+  }
+};
 
 const shutdown = async signal => {
   console.log(`${signal} received. Shutting down gracefully.`);
+  if (reconnectTimer) clearTimeout(reconnectTimer);
   if (server) {
     await new Promise(resolve => server.close(resolve));
   }
@@ -22,11 +42,12 @@ const shutdown = async signal => {
 try {
   console.log(`Starting Complete CRM API on ${host}:${port}`);
   validateEnvironment();
-  console.log('Environment validation completed. Connecting to MongoDB...');
-  await connectDB();
+  console.log('Environment validation completed. Opening HTTP server...');
   server = app.listen(port, host, () => {
     console.log(`Complete CRM API listening on http://${host}:${port}`);
   });
+  console.log('Connecting to MongoDB in the background...');
+  void connectDatabaseInBackground();
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
