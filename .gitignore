@@ -4,4 +4,3 @@ uploads/*
 !uploads/.gitkeep
 npm-debug.log*
 coverage/
-.wrangler/

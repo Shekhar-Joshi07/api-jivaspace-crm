@@ -25,10 +25,8 @@ import userRoutes from './routes/userRoutes.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import { propertyImageDirectory } from './middleware/uploadMiddleware.js';
 import { ApiError } from './utils/ApiError.js';
-import { clientIpKey } from './utils/rateLimit.js';
 
 const app = express();
-const isCloudflareWorker = process.env.CLOUDFLARE_WORKER === 'true';
 const allowedOrigins = [
   ...(process.env.CLIENT_URL || 'http://localhost:5173,http://127.0.0.1:5173').split(','),
   'https://jivaspace.com',
@@ -40,9 +38,7 @@ const allowedOrigins = [
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-// Cloudflare compresses responses at the edge. Its Node HTTP adapter does not
-// reliably complete compression's zlib response streams for browser requests.
-if (!isCloudflareWorker) app.use(compression());
+app.use(compression());
 app.use(cors({
   origin(origin, callback) {
     const normalizedOrigin = origin?.replace(/\/$/, '');
@@ -56,16 +52,13 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use('/uploads/property-images', express.static(propertyImageDirectory, { immutable: true, maxAge: '7d' }));
-// Morgan compiles formats with `new Function()`, which Cloudflare Workers blocks.
-// Cloudflare's request observability supplies production request logs instead.
-if (process.env.NODE_ENV !== 'test' && !isCloudflareWorker) {
+if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
-  keyGenerator: clientIpKey,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { success: false, message: 'Too many authentication attempts. Try again later.' }

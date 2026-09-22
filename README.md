@@ -215,64 +215,15 @@ The test suite checks health/error contracts, JWT protection, and spreadsheet ro
 7. Import/export an XLSX file and open the result.
 8. Run `npm run reminders` and check `/api/notifications`.
 
-## Cloudflare Workers deployment
+## Hostinger Node.js deployment
 
-Requirements:
+1. Create a Node.js application in Hostinger and select Node.js 18.18 or later.
+2. Set the application root to this project directory and the startup file to `src/server.js`.
+3. Run `npm ci --omit=dev` from the application root.
+4. Set `NODE_ENV=production`, `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, and any email/SMS provider values in Hostinger's environment-variable settings.
+5. Configure the application URL or reverse proxy, then confirm `GET https://your-api-domain/api/health`.
+6. Set the frontend build variable `VITE_API_URL` to `https://your-api-domain/api` and redeploy the frontend.
 
-- Cloudflare Workers with Node.js compatibility
-- MongoDB Atlas or another publicly reachable MongoDB database
-- Wrangler login from this project root: `npx wrangler login`
-
-Configure production secrets:
-
-```powershell
-npx wrangler secret put MONGO_URI
-npx wrangler secret put JWT_SECRET
-npx wrangler secret put CLIENT_URL
-```
-
-`CLIENT_URL` must be the full Cloudflare Pages frontend origin, for example `https://your-frontend.pages.dev`. To allow multiple frontend origins, use a comma-separated value.
-
-If deploying through Cloudflare's connected Git build UI instead of your terminal, add `CLIENT_URL`, `JWT_SECRET`, and `MONGO_URI` under **Variables and secrets** for the Worker project. Keep `JWT_SECRET` and `MONGO_URI` as secrets because both contain sensitive values.
-
-Optional provider secrets, only if email or SMS should work in production:
-
-```powershell
-npx wrangler secret put SMTP_HOST
-npx wrangler secret put SMTP_PORT
-npx wrangler secret put SMTP_USER
-npx wrangler secret put SMTP_PASS
-npx wrangler secret put SMTP_SECURE
-npx wrangler secret put EMAIL_FROM
-npx wrangler secret put SMS_API_URL
-npx wrangler secret put SMS_API_KEY
-npx wrangler secret put SMS_SENDER_ID
-```
-
-Deploy:
-
-```powershell
-npm run cloudflare:deploy
-```
-
-After deployment, Wrangler prints a Workers URL like `https://jivaspace-crm-api.<your-subdomain>.workers.dev`. Confirm the backend URL with:
-
-```powershell
-curl https://jivaspace-crm-api.<your-subdomain>.workers.dev/api/health
-```
-
-Set the frontend API base URL to that Workers URL. If you want a custom backend subdomain such as `https://api.example.com`, add a Worker custom domain or route in Cloudflare and keep `wrangler.jsonc` as the source of truth.
-
-Current upload storage caveat: the app stores uploaded files with Multer disk storage under `uploads`. Cloudflare Workers are not a durable filesystem for uploaded customer documents. Before relying on file upload/download routes in production, replace local Multer disk storage with Cloudflare R2 or another object store while keeping MongoDB for file metadata.
-
-## Render and MongoDB Atlas deployment
-
-1. Create an Atlas cluster and database user. Add the Render outbound network range to Atlas Network Access, or temporarily allow all IPs while testing.
-2. Create a Render Web Service from the repository.
-3. Set the root directory to `server`, build command to `npm ci`, and start command to `npm start`.
-4. Add `NODE_ENV=production`, `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, and provider credentials as Render environment variables.
-5. Confirm `GET https://your-service.onrender.com/api/health`.
-6. Add a Render Cron Job using the same server root and `npm run reminders` on the desired schedule.
-7. Local Multer files require a Render persistent disk mounted at the server `uploads` directory. For horizontally scaled or ephemeral deployments, replace disk storage in `uploadMiddleware.js` with Cloudinary or object storage while retaining the File model metadata.
+Local Multer files require persistent storage. Use Hostinger persistent storage or replace disk storage in `uploadMiddleware.js` with object storage for horizontally scaled deployments.
 
 Never commit `.env`, real credentials, or uploaded customer documents.
