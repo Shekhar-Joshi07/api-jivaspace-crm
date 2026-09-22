@@ -5,6 +5,9 @@ import { connectDB } from './config/db.js';
 import { validateEnvironment } from './config/env.js';
 
 const port = Number(process.env.PORT || 5000);
+// Managed hosts route traffic through a container network, so listen on every
+// interface rather than relying on the platform-specific Node default.
+const host = process.env.HOST || '0.0.0.0';
 let server;
 
 const shutdown = async signal => {
@@ -17,10 +20,12 @@ const shutdown = async signal => {
 };
 
 try {
+  console.log(`Starting Complete CRM API on ${host}:${port}`);
   validateEnvironment();
+  console.log('Environment validation completed. Connecting to MongoDB...');
   await connectDB();
-  server = app.listen(port, () => {
-    console.log(`Complete CRM API listening on http://localhost:${port}`);
+  server = app.listen(port, host, () => {
+    console.log(`Complete CRM API listening on http://${host}:${port}`);
   });
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
