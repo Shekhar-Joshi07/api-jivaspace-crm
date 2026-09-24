@@ -46,7 +46,8 @@ export const changePasswordRules = [
 export const attendanceLocationRules = [
   body('latitude').isFloat({ min: -90, max: 90 }).toFloat(),
   body('longitude').isFloat({ min: -180, max: 180 }).toFloat(),
-  body('accuracyMeters').optional().isFloat({ min: 0, max: 10000 }).toFloat()
+  body('accuracyMeters').optional().isFloat({ min: 0, max: 10000 }).toFloat(),
+  body('address').optional().isString().trim().isLength({ max: 500 })
 ];
 
 export const attendanceConfigRules = [

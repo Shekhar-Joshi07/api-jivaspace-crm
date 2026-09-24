@@ -5,6 +5,7 @@ const locationSchema = new mongoose.Schema(
     at: { type: Date, required: true },
     latitude: { type: Number, required: true, min: -90, max: 90 },
     longitude: { type: Number, required: true, min: -180, max: 180 },
+    address: { type: String, trim: true, maxlength: 500 },
     accuracyMeters: { type: Number, min: 0 },
     distanceMeters: { type: Number, required: true, min: 0 }
   },

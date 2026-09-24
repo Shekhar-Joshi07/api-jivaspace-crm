@@ -38,11 +38,13 @@ const locationFromRequest = req => {
   const latitude = Number(req.body.latitude);
   const longitude = Number(req.body.longitude);
   const accuracyMeters = req.body.accuracyMeters === undefined ? undefined : Number(req.body.accuracyMeters);
+  const address = typeof req.body.address === 'string' ? req.body.address.trim() : undefined;
 
   return {
     at: new Date(),
     latitude,
     longitude,
+    address: address || undefined,
     accuracyMeters,
     distanceMeters: 0
   };

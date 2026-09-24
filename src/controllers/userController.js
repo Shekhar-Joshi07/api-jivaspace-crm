@@ -111,21 +111,47 @@ export const updateUser = async (req, res) => {
 };
 
 export const approveUser = async (req, res) => {
-  const user = await User.findById(req.params.id);
-  if (!user) throw new ApiError(404, 'User not found');
-  if (user.approvalStatus !== 'pending') {
-    throw new ApiError(409, 'This account has already been approved');
+  // Match the pending state in the update itself. This makes simultaneous
+  // clicks/retries safe: only one request can perform the state transition.
+  const user = await User.findOneAndUpdate(
+    { _id: req.params.id, approvalStatus: 'pending' },
+    {
+      $set: {
+        approvalStatus: 'approved',
+        isActive: true,
+        updatedBy: req.user._id
+      }
+    },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) {
+    const existingUser = await User.findById(req.params.id);
+    if (!existingUser) throw new ApiError(404, 'User not found');
+
+    // Approval is intentionally idempotent. A retry after a slow response,
+    // an email failure, or a double-click must not turn into a 409 error.
+    return sendSuccess(res, {
+      message: 'Account was already approved',
+      data: await populateUser(User.findById(existingUser._id)),
+      meta: { alreadyApproved: true }
+    });
   }
 
-  user.approvalStatus = 'approved';
-  user.isActive = true;
-  user.updatedBy = req.user._id;
-  await user.save();
-  await sendAccountApprovedEmail({ user });
+  let emailSent = true;
+  try {
+    await sendAccountApprovedEmail({ user });
+  } catch (error) {
+    // The account has already been approved successfully. Do not make the
+    // client retry the approval (and risk a confusing conflict) if SMTP fails.
+    emailSent = false;
+    console.error(`Approval email could not be sent to ${user.email}:`, error.message);
+  }
 
   return sendSuccess(res, {
-    message: 'Account approved and approval email sent',
-    data: await populateUser(User.findById(user._id))
+    message: emailSent ? 'Account approved and approval email sent' : 'Account approved, but the approval email could not be sent',
+    data: await populateUser(User.findById(user._id)),
+    meta: { emailSent }
   });
 };
 
