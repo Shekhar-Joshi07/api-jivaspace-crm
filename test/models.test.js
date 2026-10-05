@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import mongoose from 'mongoose';
 import Lead, { LEAD_SOURCES } from '../src/models/Lead.js';
+import LeadTransferLog from '../src/models/LeadTransferLog.js';
 import Task from '../src/models/Task.js';
 import User, { USER_ROLES, normalizeUserRole } from '../src/models/User.js';
 
@@ -80,4 +81,17 @@ test('User uses the three real-estate CRM roles and normalizes legacy role value
   assert.equal(normalizeUserRole('Team Leader'), 'admin');
   assert.equal(normalizeUserRole('business_executive'), 'sales_executive');
   assert.equal(normalizeUserRole('telecaller'), 'sales_executive');
+});
+
+test('transfer logs allow a lead to be transferred to its current owner', async () => {
+  const user = id();
+  const transfer = new LeadTransferLog({
+    lead: id(),
+    fromUser: user,
+    toUser: user,
+    transferredBy: user,
+    reason: 'Reassign selected leads'
+  });
+
+  await transfer.validate();
 });

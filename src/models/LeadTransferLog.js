@@ -45,10 +45,4 @@ leadTransferLogSchema.index({ lead: 1, createdAt: -1 });
 leadTransferLogSchema.index({ toUser: 1, createdAt: -1 });
 leadTransferLogSchema.index({ transferredBy: 1, createdAt: -1 });
 
-leadTransferLogSchema.pre('validate', function validateTransferUsers() {
-  if (this.fromUser && String(this.fromUser) === String(this.toUser)) {
-    this.invalidate('toUser', 'Source and destination users must be different');
-  }
-});
-
 export default mongoose.model('LeadTransferLog', leadTransferLogSchema);
