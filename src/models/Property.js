@@ -5,7 +5,9 @@ const propertySchema = new mongoose.Schema({
   slug: { type: String, trim: true, lowercase: true, maxlength: 220, unique: true, sparse: true },
   type: { type: String, enum: PROPERTY_TYPES, required: true },
   location: { type: String, required: true, trim: true, maxlength: 300 },
-  price: { type: Number, required: true, min: 0 },
+  // Website listings often need a human-readable range (for example, "₹21 Lac - ₹45 Lac").
+  // Unit-level inventory prices remain numeric in PropertyUnit.
+  price: { type: String, required: true, trim: true, maxlength: 100 },
   startFrom: { type: String, trim: true, maxlength: 100 },
   size: { type: String, trim: true, maxlength: 100 },
   bedrooms: { type: Number, min: 0 },
