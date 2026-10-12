@@ -5,17 +5,18 @@ import { ApiError } from '../utils/ApiError.js';
 import { getPagination, paginationMeta, sendSuccess } from '../utils/apiResponse.js';
 
 const editableFields = [
-  'name', 'employeeId', 'phone', 'role', 'reportingManager', 'avatarUrl',
+  'name', 'employeeId', 'phone', 'role', 'avatarUrl',
   'isActive', 'password'
 ];
 
 const getUserScope = async actor => {
+  if (isSuperAdmin(actor)) return {};
+  if (isAdmin(actor)) return { role: 'sales_executive' };
   const ids = await getManagedUserIds(actor);
   return ids ? { _id: { $in: ids } } : {};
 };
 
 const populateUser = query => query
-  .populate('reportingManager', 'name email role employeeId')
   .populate('createdBy updatedBy', 'name email role');
 
 const assertRoleAllowed = (actor, role) => {
@@ -25,21 +26,12 @@ const assertRoleAllowed = (actor, role) => {
   }
 };
 
-const assertManagerExists = async reportingManager => {
-  if (!reportingManager) return;
-  const manager = await User.findOne({
-    _id: reportingManager,
-    role: { $in: ['superadmin', 'admin'] },
-    isActive: true
-  });
-  if (!manager) throw new ApiError(422, 'Active reporting manager not found');
-};
-
 export const getUsers = async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
   const filter = await getUserScope(req.user);
-  if (req.query.role) filter.role = req.query.role;
-  if (req.query.reportingManager) filter.reportingManager = req.query.reportingManager;
+  if (req.query.role && (isSuperAdmin(req.user) || req.query.role === 'sales_executive')) {
+    filter.role = req.query.role;
+  }
   if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
   if (req.query.approvalStatus) filter.approvalStatus = req.query.approvalStatus;
   if (req.query.accountStatus === 'pending') filter.approvalStatus = 'pending';
@@ -68,7 +60,6 @@ export const getUser = async (req, res) => {
 
 export const createUser = async (req, res) => {
   assertRoleAllowed(req.user, req.body.role);
-  await assertManagerExists(req.body.reportingManager);
   const email = req.body.email.trim().toLowerCase();
   if (await User.exists({ email })) throw new ApiError(409, 'An account with this email already exists');
   const user = await User.create({ ...req.body, email, createdBy: req.user._id });
@@ -98,7 +89,6 @@ export const updateUser = async (req, res) => {
     throw new ApiError(400, 'Approve this account using the approval action');
   }
   assertRoleAllowed(req.user, req.body.role);
-  await assertManagerExists(req.body.reportingManager);
   for (const field of editableFields) {
     if (req.body[field] !== undefined) user[field] = req.body[field];
   }

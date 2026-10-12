@@ -244,7 +244,9 @@ const projectFieldRules = [
   body('amenities').optional().isArray(),
   body('description').optional({ nullable: true }).isLength({ max: 10000 }),
   body('brochure').optional({ nullable: true }).isString().isLength({ max: 1000 }),
-  body('images').optional().isArray()
+  body('images').optional().isArray(),
+  body('publishOnWebsite').optional().isBoolean().toBoolean(),
+  body('websiteSlug').optional({ nullable: true, checkFalsy: true }).trim().matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
 ];
 
 export const createProjectRules = [

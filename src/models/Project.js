@@ -4,6 +4,12 @@ import { PROPERTY_TYPES } from '../utils/propertyTypes.js';
 export const PROJECT_STATUSES = ['Upcoming', 'Ongoing', 'Ready to Move', 'Sold Out'];
 export const PROJECT_PROPERTY_TYPES = PROPERTY_TYPES;
 
+const slugify = value => String(value || '')
+  .toLowerCase()
+  .trim()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
 const projectSchema = new mongoose.Schema(
   {
     projectName: {
@@ -69,6 +75,17 @@ const projectSchema = new mongoose.Schema(
       coordinates: { type: [Number] }
     },
     websiteUrl: { type: String, trim: true, maxlength: 1000 },
+    publishOnWebsite: { type: Boolean, default: false, index: true },
+    websiteSlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      sparse: true,
+      maxlength: [220, 'Website slug cannot exceed 220 characters'],
+      match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Website slug can only contain lowercase letters, numbers, and hyphens'],
+      required() { return this.publishOnWebsite; }
+    },
     contactPerson: {
       name: { type: String, trim: true, maxlength: 100 },
       phone: { type: String, trim: true, maxlength: 20 },
@@ -95,6 +112,7 @@ projectSchema.pre('validate', function syncLegacyFields() {
   if (this.type) this.type = normalizePropertyType(this.type);
   if (!this.brochure && this.brochureUrl) this.brochure = this.brochureUrl;
   if (!this.brochureUrl && this.brochure) this.brochureUrl = this.brochure;
+  if (this.publishOnWebsite && !this.websiteSlug) this.websiteSlug = slugify(this.projectName);
   if (this.availableUnits != null && this.totalUnits != null && this.availableUnits > this.totalUnits) {
     this.invalidate('availableUnits', 'Available units cannot exceed total units');
   }

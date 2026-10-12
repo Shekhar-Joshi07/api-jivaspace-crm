@@ -14,6 +14,7 @@ import fileRoutes from './routes/fileRoutes.js';
 import leadRoutes from './routes/leadRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
+import publicProjectRoutes from './routes/publicProjectRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
 import propertyUnitRoutes from './routes/propertyUnitRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
@@ -78,6 +79,7 @@ app.get('/api/health', (_req, res) => res.json({
 }));
 
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/public', publicProjectRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/projects', projectRoutes);

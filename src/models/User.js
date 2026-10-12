@@ -67,11 +67,6 @@ const userSchema = new mongoose.Schema(
       set: normalizeUserRole,
       index: true
     },
-    reportingManager: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      index: true
-    },
     avatarUrl: { type: String, trim: true },
     isActive: { type: Boolean, default: true, index: true },
     approvalStatus: {
@@ -101,7 +96,6 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ role: 1, isActive: 1 });
-userSchema.index({ reportingManager: 1, isActive: 1 });
 
 userSchema.pre('save', async function hashPassword() {
   if (!this.isModified('password')) return;

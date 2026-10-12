@@ -30,6 +30,8 @@ const pick = body => {
     'geoLocation',
     'brochureUrl',
     'websiteUrl',
+    'publishOnWebsite',
+    'websiteSlug',
     'contactPerson'
   ];
   for (const field of fields) {
@@ -71,11 +73,38 @@ const formatProject = project => {
     description: obj.description || '',
     brochure: obj.brochure || obj.brochureUrl || null,
     images: obj.images || [],
+    reraNumber: obj.reraNumber || null,
+    websiteUrl: obj.websiteUrl || null,
+    contactPerson: obj.contactPerson || null,
+    publishOnWebsite: !!obj.publishOnWebsite,
+    websiteSlug: obj.websiteSlug || null,
     isActive: !!obj.isActive,
     createdBy: obj.createdBy || null,
     updatedBy: obj.updatedBy || null,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt
+  };
+};
+
+const formatPublicProject = project => {
+  const formatted = formatProject(project);
+  return {
+    id: formatted.id,
+    projectName: formatted.projectName,
+    builderName: formatted.builderName,
+    location: formatted.location,
+    propertyType: formatted.propertyType,
+    priceRange: formatted.priceRange,
+    status: formatted.status,
+    amenities: formatted.amenities,
+    description: formatted.description,
+    brochure: formatted.brochure,
+    images: formatted.images,
+    reraNumber: formatted.reraNumber,
+    websiteUrl: formatted.websiteUrl,
+    contactPerson: formatted.contactPerson,
+    websiteSlug: formatted.websiteSlug,
+    updatedAt: formatted.updatedAt
   };
 };
 
@@ -164,3 +193,23 @@ export const getProjectEnums = async (_req, res) => sendSuccess(res, {
     propertyTypes: PROJECT_PROPERTY_TYPES
   }
 });
+
+export const getPublishedProjects = async (_req, res) => {
+  const projects = await Project.find({ isActive: true, publishOnWebsite: true })
+    .sort('projectName')
+    .select('-createdBy -updatedBy')
+    .lean();
+  return sendSuccess(res, { data: projects.map(formatPublicProject) });
+};
+
+export const getPublishedProject = async (req, res) => {
+  const project = await Project.findOne({
+    isActive: true,
+    publishOnWebsite: true,
+    websiteSlug: req.params.slug
+  })
+    .select('-createdBy -updatedBy')
+    .lean();
+  if (!project) throw new ApiError(404, 'Website project not found');
+  return sendSuccess(res, { data: formatPublicProject(project) });
+};
