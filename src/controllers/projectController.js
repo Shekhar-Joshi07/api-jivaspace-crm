@@ -5,6 +5,14 @@ import { getPagination, paginationMeta, sendSuccess } from '../utils/apiResponse
 
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const websiteSlug = value => String(value || '')
+  .toLowerCase()
+  .trim()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
+const publicProjectFilter = { isActive: true, publishOnWebsite: { $ne: false } };
+
 const pick = body => {
   const payload = {};
   const fields = [
@@ -77,7 +85,7 @@ const formatProject = project => {
     websiteUrl: obj.websiteUrl || null,
     contactPerson: obj.contactPerson || null,
     publishOnWebsite: !!obj.publishOnWebsite,
-    websiteSlug: obj.websiteSlug || null,
+    websiteSlug: obj.websiteSlug || websiteSlug(obj.projectName || obj.name) || null,
     isActive: !!obj.isActive,
     createdBy: obj.createdBy || null,
     updatedBy: obj.updatedBy || null,
@@ -195,7 +203,7 @@ export const getProjectEnums = async (_req, res) => sendSuccess(res, {
 });
 
 export const getPublishedProjects = async (_req, res) => {
-  const projects = await Project.find({ isActive: true, publishOnWebsite: true })
+  const projects = await Project.find(publicProjectFilter)
     .sort('projectName')
     .select('-createdBy -updatedBy')
     .lean();
@@ -203,13 +211,15 @@ export const getPublishedProjects = async (_req, res) => {
 };
 
 export const getPublishedProject = async (req, res) => {
-  const project = await Project.findOne({
-    isActive: true,
-    publishOnWebsite: true,
-    websiteSlug: req.params.slug
-  })
+  let project = await Project.findOne({ ...publicProjectFilter, websiteSlug: req.params.slug })
     .select('-createdBy -updatedBy')
     .lean();
+  if (!project) {
+    const legacyProjects = await Project.find(publicProjectFilter)
+      .select('-createdBy -updatedBy')
+      .lean();
+    project = legacyProjects.find(item => websiteSlug(item.projectName || item.name) === req.params.slug);
+  }
   if (!project) throw new ApiError(404, 'Website project not found');
   return sendSuccess(res, { data: formatPublicProject(project) });
 };

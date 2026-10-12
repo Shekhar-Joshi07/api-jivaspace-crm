@@ -75,7 +75,7 @@ const projectSchema = new mongoose.Schema(
       coordinates: { type: [Number] }
     },
     websiteUrl: { type: String, trim: true, maxlength: 1000 },
-    publishOnWebsite: { type: Boolean, default: false, index: true },
+    publishOnWebsite: { type: Boolean, default: true, index: true },
     websiteSlug: {
       type: String,
       trim: true,
