@@ -406,6 +406,17 @@ export const createLead = async (req, res) => {
 export const updateLead = async (req, res) => {
   const lead = await getAccessibleLead(req.params.id, req.user);
   const payload = normalizeLeadInput(req.body);
+
+  // Sales executives may maintain the customer information for leads assigned
+  // to them, but ownership and commercial/pipeline controls stay with admins.
+  if (!isAdmin(req.user)) {
+    const restrictedFields = ['assignedTo', 'status', 'priority', 'estimatedValue', 'revenue', 'isArchived'];
+    const attemptedRestrictedChange = restrictedFields.some(field => payload[field] !== undefined);
+    if (attemptedRestrictedChange) {
+      throw new ApiError(403, 'Only administrators can change assignment, status, priority, or commercial controls');
+    }
+  }
+
   const oldStatus = lead.status;
   const oldMobile = lead.phone;
   const oldAssignee = toObjectIdString(lead.assignedTo);

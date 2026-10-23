@@ -1,4 +1,5 @@
 import Lead from '../models/Lead.js';
+import SiteVisit from '../models/SiteVisit.js';
 import { buildAssignmentFilter } from '../utils/accessControl.js';
 import { ApiError } from '../utils/ApiError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
@@ -12,6 +13,21 @@ const normalizeDateKey = (value) => {
 };
 
 const getFollowUpValue = (lead) => lead.followUpDate || lead.nextFollowUp || null;
+
+const calendarDateRange = (fromValue, toValue) => {
+  const from = fromValue ? new Date(fromValue) : new Date();
+  const to = toValue ? new Date(toValue) : new Date(from.getTime() + 30 * 86400000);
+
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
+    throw new ApiError(400, 'Provide a valid calendar date range');
+  }
+
+  // Calendar controls send date-only values. Include the whole final day so
+  // visits that carry a time component are not excluded from their date cell.
+  from.setUTCHours(0, 0, 0, 0);
+  to.setUTCHours(23, 59, 59, 999);
+  return { from, to };
+};
 
 export const stats = async (req, res) => {
   const leadFilter = await buildAssignmentFilter(req.user);
@@ -58,16 +74,12 @@ export const stats = async (req, res) => {
 };
 
 export const calendar = async (req, res) => {
-  const from = req.query.from ? new Date(req.query.from) : new Date();
-  const to = req.query.to ? new Date(req.query.to) : new Date(from.getTime() + 30 * 86400000);
-
-  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
-    throw new ApiError(400, 'Provide a valid calendar date range');
-  }
+  const { from, to } = calendarDateRange(req.query.from, req.query.to);
 
   const leadFilter = await buildAssignmentFilter(req.user);
 
-  const leads = await Lead.find({
+  const [leads, accessibleLeadIds] = await Promise.all([
+    Lead.find({
     ...leadFilter,
     isArchived: false,
     status: { $nin: [...TERMINAL_STATUSES] },
@@ -80,6 +92,29 @@ export const calendar = async (req, res) => {
     .populate('project', 'name code')
     .select('name status assignedTo followUpDate nextFollowUp project')
     .sort({ followUpDate: 1, nextFollowUp: 1, createdAt: 1 })
+    .lean(),
+    Lead.find(leadFilter).distinct('_id')
+  ]);
+
+  const siteVisits = await SiteVisit.find({
+    lead: { $in: accessibleLeadIds },
+    isActive: { $ne: false },
+    $or: [
+      {
+        $and: [
+          { $or: [{ visitStatus: { $in: ['Scheduled', 'Rescheduled'] } }, { visitStatus: null, status: { $in: ['Scheduled', 'Rescheduled'] } }] },
+          { $or: [{ visitDate: { $gte: from, $lte: to } }, { visitDate: null, scheduledAt: { $gte: from, $lte: to } }] }
+        ]
+      },
+      { nextFollowUpDate: { $gte: from, $lte: to } },
+      { nextFollowUpDate: null, nextFollowUpAt: { $gte: from, $lte: to } }
+    ]
+  })
+    .populate('lead', 'name')
+    .populate('assignedSalesPerson', 'name role')
+    .populate('project', 'name code')
+    .select('lead project visitDate scheduledAt visitStatus status nextFollowUpDate nextFollowUpAt assignedSalesPerson')
+    .sort({ visitDate: 1, scheduledAt: 1, nextFollowUpDate: 1, nextFollowUpAt: 1, createdAt: 1 })
     .lean();
 
   const grouped = new Map();
@@ -94,9 +129,11 @@ export const calendar = async (req, res) => {
     }
 
     grouped.get(dateKey).push({
+      id: `lead-follow-up-${lead._id}`,
       leadId: lead._id,
       customerName: lead.name,
       status: lead.status,
+      eventType: 'Lead follow-up',
       assignedTo: lead.assignedTo
         ? {
             id: lead.assignedTo._id,
@@ -113,6 +150,51 @@ export const calendar = async (req, res) => {
           }
         : null
     });
+  }
+
+  for (const visit of siteVisits) {
+    const visitDate = visit.visitDate || visit.scheduledAt;
+    const followUpDate = visit.nextFollowUpDate || visit.nextFollowUpAt;
+    const visitStatus = visit.visitStatus || visit.status || 'Scheduled';
+    const shared = {
+      leadId: visit.lead?._id || visit.lead,
+      customerName: visit.lead?.name || 'Site visit',
+      assignedTo: visit.assignedSalesPerson
+        ? {
+            id: visit.assignedSalesPerson._id,
+            name: visit.assignedSalesPerson.name,
+            role: visit.assignedSalesPerson.role
+          }
+        : null,
+      interestedProject: visit.project
+        ? {
+            id: visit.project._id,
+            name: visit.project.name,
+            code: visit.project.code
+          }
+        : null
+    };
+
+    const addVisitEvent = (date, id, status, eventType) => {
+      const dateKey = normalizeDateKey(date);
+      if (!dateKey) return;
+      if (!grouped.has(dateKey)) grouped.set(dateKey, []);
+      grouped.get(dateKey).push({
+        ...shared,
+        id,
+        followUpDate: date,
+        status,
+        eventType,
+        siteVisitId: visit._id
+      });
+    };
+
+    if (visitDate >= from && visitDate <= to) {
+      addVisitEvent(visitDate, `site-visit-${visit._id}`, visitStatus, 'Site visit');
+    }
+    if (followUpDate >= from && followUpDate <= to) {
+      addVisitEvent(followUpDate, `site-follow-up-${visit._id}`, 'Follow-up Needed', 'Site visit follow-up');
+    }
   }
 
   const data = [...grouped.entries()]
