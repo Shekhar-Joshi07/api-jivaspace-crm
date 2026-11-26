@@ -362,7 +362,15 @@ export const createWebsiteEnquiry = async (req, res) => {
 
 export const createLead = async (req, res) => {
   const payload = normalizeLeadInput(req.body);
-  payload.assignedTo ||= req.user._id;
+  // Sales executives may create leads, but only for themselves. Assignment,
+  // status, and priority continue to be controlled by administrators.
+  if (!isAdmin(req.user)) {
+    payload.assignedTo = req.user._id;
+    payload.status = 'New';
+    payload.priority = 'Medium';
+  } else {
+    payload.assignedTo ||= req.user._id;
+  }
   payload.createdBy = req.user._id;
   payload.updatedBy = req.user._id;
 

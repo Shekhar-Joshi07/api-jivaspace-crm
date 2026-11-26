@@ -76,7 +76,7 @@ router.post(
 router.post('/bulk-transfer', authorize(...ADMIN_ROLES), asyncHandler(bulkTransferLeads));
 
 router.get('/', asyncHandler(getLeads));
-router.post('/', authorize(...ADMIN_ROLES), createLeadRules, validateRequest, asyncHandler(createLead));
+router.post('/', authorize(...CRM_ROLES), createLeadRules, validateRequest, asyncHandler(createLead));
 router.get('/:id', idParam(), validateRequest, asyncHandler(getLead));
 router.put('/:id', idParam(), updateLeadRules, validateRequest, asyncHandler(updateLead));
 router.delete('/:id', authorize(...ADMIN_ROLES), idParam(), validateRequest, asyncHandler(deleteLead));
